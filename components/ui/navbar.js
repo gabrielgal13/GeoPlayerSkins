@@ -77,7 +77,7 @@ export default function Navbar({ maintenance, joinCodePress, inCrazyGames, inCoo
                         </button>
                     )}
 
-                    {!inGame && showAccBtn && !inCoolMathGames && !accountModalOpen && !mapModalOpen && screen !== "onboarding" && screen !== 'daily' && (
+                    {!inGame && showAccBtn && !inCoolMathGames && !accountModalOpen && !mapModalOpen && screen !== "onboarding" && screen !== 'daily' && session?.token?.secret && (
                         <AccountBtn
                             inCrazyGames={inCrazyGames}
                             inGameDistribution={inGameDistribution}
@@ -104,7 +104,7 @@ export default function Navbar({ maintenance, joinCodePress, inCrazyGames, inCoo
                     >
                         <span className="onboardingJoinPartyBtn__content">{text("joinGame")}</span>
                     </button>
-                    {!inGame && showAccBtn && !inCoolMathGames && !accountModalOpen && !mapModalOpen && (
+                    {!inGame && showAccBtn && !inCoolMathGames && !accountModalOpen && !mapModalOpen && session?.token?.secret && (
                         <div className="onboardingLoginBtn">
                             <AccountBtn
                                 inCrazyGames={inCrazyGames}

@@ -29,7 +29,7 @@ const MapWidget = dynamic(() => import("../components/Map"), { ssr: false });
 // import RoundOverScreen from "./roundOverScreen";
 const RoundOverScreen = dynamic(() => import("./roundOverScreen"), { ssr: false });
 
-export default function GameUI({ inCoolMathGames, inGameDistribution, miniMapShown, setMiniMapShown, singlePlayerRound, setSinglePlayerRound, showDiscordModal, setShowDiscordModal, inCrazyGames, showPanoOnResult, setShowPanoOnResult, countryGuesserCorrect, setCountryGuesserCorrect, otherOptions, onboarding, setOnboarding, countryGuesser, options, timeOffset, ws, multiplayerState, backBtnPressed, setMultiplayerState, countryStreak, setCountryStreak, loading, setLoading, session, gameOptionsModalShown, setGameOptionsModalShown, mapModal, latLong, loadLocation, gameOptions, setGameOptions, showAnswer, setShowAnswer, pinPoint, setPinPoint, hintShown, setHintShown, showCountryButtons, setShowCountryButtons, welcomeOverlayShown, countryGuessrMode, dailyMode, onRoundsComplete }) {
+export default function GameUI({ inCoolMathGames, inGameDistribution, miniMapShown, setMiniMapShown, singlePlayerRound, setSinglePlayerRound, showDiscordModal, setShowDiscordModal, inCrazyGames, showPanoOnResult, setShowPanoOnResult, countryGuesserCorrect, setCountryGuesserCorrect, otherOptions, onboarding, setOnboarding, countryGuesser, options, timeOffset, ws, multiplayerState, backBtnPressed, setMultiplayerState, countryStreak, setCountryStreak, loading, setLoading, session, gameOptionsModalShown, setGameOptionsModalShown, mapModal, latLong, loadLocation, gameOptions, setGameOptions, showAnswer, setShowAnswer, pinPoint, setPinPoint, hintShown, setHintShown, showCountryButtons, setShowCountryButtons, welcomeOverlayShown, countryGuessrMode, dailyMode, onRoundsComplete, chatGuesses, chatGameRoundResults, chatGameScores }) {
   const { t: text } = useTranslation("common");
   const onboardingRevealStartedAt = useRef(0);
 
@@ -937,7 +937,7 @@ session={session}/>
           </button>
         </div>
 )}
-        <MapWidget shown={mapReadyForCameraReset} options={options} ws={ws} gameOptions={gameOptions} answerShown={showAnswerOnMap} session={session} showHint={hintShown} pinPoint={pinPoint} setPinPoint={setPinPoint} location={mapLocationForRender} setKm={setKm} multiplayerState={multiplayerState} countryGuessPin={guessedCountryCode && !countryGuesserCorrect && countryCoordinates[guessedCountryCode] ? countryCoordinates[guessedCountryCode] : null} stopCameraAnimations={mapFadingOutForRender || forceHideMiniMap} resetKey={mapCameraResetKey} cameraCancelKey={mapCameraCancelKey} />
+        <MapWidget shown={mapReadyForCameraReset} options={options} ws={ws} gameOptions={gameOptions} answerShown={showAnswerOnMap} session={session} showHint={hintShown} pinPoint={pinPoint} setPinPoint={setPinPoint} location={mapLocationForRender} setKm={setKm} multiplayerState={multiplayerState} countryGuessPin={guessedCountryCode && !countryGuesserCorrect && countryCoordinates[guessedCountryCode] ? countryCoordinates[guessedCountryCode] : null} stopCameraAnimations={mapFadingOutForRender || forceHideMiniMap} resetKey={mapCameraResetKey} cameraCancelKey={mapCameraCancelKey} chatGuesses={chatGuesses} />
 
 
         <div className={`miniMap__btns ${showAnswerOnMap ? 'answerShownBtns' : ''}`}>
@@ -1150,6 +1150,58 @@ singlePlayerRound={singlePlayerRound} onboarding={onboarding} countryGuesser={co
     {((timeToNextMultiplayerEvt <= 5 && timeToNextMultiplayerEvt > 0 && multiplayerTimerShown && !showAnswer && !pinPoint && multiplayerState?.inGame && multiplayerState?.gameData?.state === 'guess') ||
       (timeToNextRound <= 5 && timeToNextRound > 0 && onboardingTimerShown && !showAnswer && !pinPoint && onboarding)) && (
       <div className="screen-critical-warning" />
+    )}
+
+    {/* Chat game leaderboard — shown during answer phase */}
+    {showAnswer && chatGameRoundResults?.length > 0 && (
+      <div style={{
+        position: 'fixed', bottom: 80, right: 16, zIndex: 1200,
+        background: 'rgba(10,10,20,0.92)', border: '1px solid rgba(255,255,255,0.12)',
+        borderRadius: 12, padding: '10px 14px', minWidth: 220, maxWidth: 280,
+        boxShadow: '0 4px 24px rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+        fontFamily: 'sans-serif',
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 8, textTransform: 'uppercase' }}>
+          Chat — Rodada
+        </div>
+        {chatGameRoundResults.map((r, i) => (
+          <div key={r.name} style={{
+            display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5,
+            padding: '4px 6px', borderRadius: 7,
+            background: i === 0 ? 'rgba(255,215,0,0.08)' : 'rgba(255,255,255,0.03)',
+          }}>
+            <span style={{ width: 18, textAlign: 'center', fontSize: 13 }}>
+              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`}
+            </span>
+            <span style={{ flex: 1, fontSize: 12, color: '#fff', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {r.name}
+            </span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginRight: 4 }}>{r.km} km</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: r.score >= 4000 ? '#00e676' : r.score >= 2000 ? '#FFD166' : '#FF6B6B', minWidth: 36, textAlign: 'right' }}>
+              {r.score.toLocaleString()}
+            </span>
+          </div>
+        ))}
+        {chatGameScores?.length > 1 && (
+          <>
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: 2, marginBottom: 6, textTransform: 'uppercase' }}>
+              Total
+            </div>
+            {chatGameScores.slice(0, 5).map((p, i) => (
+              <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                <span style={{ fontSize: 10, color: i === 0 ? '#FFD166' : 'rgba(255,255,255,0.3)', width: 14 }}>{i === 0 ? '👑' : `${i+1}.`}</span>
+                <span style={{ flex: 1, fontSize: 11, color: i === 0 ? '#FFD166' : 'rgba(255,255,255,0.6)', fontWeight: i === 0 ? 700 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p.name}
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: i === 0 ? '#FFD166' : 'rgba(255,255,255,0.5)' }}>
+                  {p.total.toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
     )}
   </div>
 

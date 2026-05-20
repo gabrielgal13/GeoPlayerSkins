@@ -1,6 +1,5 @@
 import HeadContent from "@/components/headContent";
-import { FaDiscord, FaBook } from "react-icons/fa";
-import { FaGear, FaRankingStar, FaYoutube } from "react-icons/fa6";
+import calcPoints, { findDistance } from "@/components/calcPoints";
 import { signOut, useSession } from "@/components/auth/auth";
 import { fetchWithFallback } from "@/components/utils/retryFetch";
 import 'react-responsive-modal/styles.css';
@@ -46,10 +45,9 @@ import SuggestAccountModal from "@/components/suggestAccountModal";
 import MapsModal from "@/components/maps/mapsModal";
 import DiscordModal from "@/components/discordModal";
 import AlertModal from "@/components/ui/AlertModal";
+import ChatGameModal from "@/components/ChatGameModal";
 import WhatsNewModal from "@/components/ui/WhatsNewModal";
 import PendingNameChangeModal from "./pendingNameChangeModal";
-import DailyMenuItem from '@/components/daily/DailyMenuItem';
-import DailyCommunityMapsButton from '@/components/daily/DailyCommunityMapsButton';
 import msToTime from "@/components/msToTime";
 import { toast, ToastContainer } from "react-toastify";
 import { inIframe, isForbiddenIframe } from "@/components/utils/inIframe";
@@ -66,8 +64,6 @@ import StreetView from "./streetview/streetView";
 // import SvEmbedIframe from "./streetview/svHandler"; // REMOVED: Using direct StreetView instead of double-iframe setup
 // import getTimeString, { getMaintenanceDate } from "./maintenanceTime";
 // import MaintenanceBanner from "./MaintenanceBanner";
-import Ad from "./bannerAdNitro";
-import GameDistributionBanner from "./bannerAdGameDistribution";
 
 const ROUND_OVER_FADE_MS = 500;
 
@@ -584,6 +580,12 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
     const [partyModalShown, setPartyModalShown] = useState(false);
     const [selectCountryModalShown, setSelectCountryModalShown] = useState(false);
     const [connectionErrorModalShown, setConnectionErrorModalShown] = useState(false);
+    const [chatGameModalOpen, setChatGameModalOpen] = useState(false);
+    const [chatGuesses, setChatGuesses] = useState([]);
+    const chatGameActiveRef = useRef(false);
+    const chatSseRef = useRef(null);
+    const [chatGameScores, setChatGameScores] = useState([]); // [{ name, source, total }] cumulative
+    const [chatGameRoundResults, setChatGameRoundResults] = useState([]); // [{ name, source, text, score, km }] current round
 
 
     const [inCoolMathGames, setInCoolMathGames] = useState(false);
@@ -1426,6 +1428,64 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
             setConnectionErrorModalShown(false);
         }
     }, [multiplayerState.connected]);
+
+    // Chat game: start round when a new panorama loads (latLong changes in singleplayer)
+    useEffect(() => {
+        if (!chatGameActiveRef.current) return;
+        if (!latLong?.lat) return; // ignore null/reset during location transitions
+        setChatGameRoundResults([]); // clear previous round's leaderboard
+        fetch('http://localhost:3000/api/game-session/round', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ active: true }),
+        }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [latLong]);
+
+    // Chat game: end round + compute scores when streamer reveals the answer
+    useEffect(() => {
+        if (!chatGameActiveRef.current || !showAnswer) return;
+        fetch('http://localhost:3000/api/game-session/round', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ active: false }),
+        }).catch(() => {});
+        if (latLong?.lat) {
+            const maxDist = gameOptions?.maxDist || 20000;
+            const validGuesses = chatGuesses.filter(g => g.lat != null && g.lng != null);
+            const allEntries = validGuesses.map(g => ({
+                name: g.name,
+                source: g.source,
+                text: g.text,
+                score: calcPoints({ lat: latLong.lat, lon: latLong.long, guessLat: g.lat, guessLon: g.lng, usedHint: false, maxDist }),
+                km: Math.round(findDistance(latLong.lat, latLong.long, g.lat, g.lng)),
+            }));
+            const streamerPin = pinPointRef.current;
+            if (streamerPin?.lat != null && streamerPin?.lng != null) {
+                const streamerKm = Math.round(findDistance(latLong.lat, latLong.long, streamerPin.lat, streamerPin.lng));
+                allEntries.push({
+                    name: session?.token?.username || 'Streamer',
+                    source: 'streamer',
+                    text: `${streamerKm} km`,
+                    score: calcPoints({ lat: latLong.lat, lon: latLong.long, guessLat: streamerPin.lat, guessLon: streamerPin.lng, usedHint: false, maxDist }),
+                    km: streamerKm,
+                });
+            }
+            if (allEntries.length > 0) {
+                const results = allEntries.sort((a, b) => b.score - a.score);
+                setChatGameRoundResults(results);
+                setChatGameScores(prev => {
+                    const map = Object.fromEntries(prev.map(p => [p.name, { ...p }]));
+                    for (const r of results) {
+                        if (map[r.name]) map[r.name].total += r.score;
+                        else map[r.name] = { name: r.name, source: r.source, total: r.score };
+                    }
+                    return Object.values(map).sort((a, b) => b.total - a.total);
+                });
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showAnswer]);
 
     useEffect(() => {
         if (!session?.token?.secret) return;
@@ -3161,20 +3221,6 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
                     </div>
                 )}
 
-                {screen === 'home' && !inCrazyGames && !process.env.NEXT_PUBLIC_COOLMATH && !process.env.NEXT_PUBLIC_GAMEDISTRIBUTION &&
-                    <div className="home_ad">
-                        <Ad
-                            unit={"worldguessr_home_ad"}
-                            inCrazyGames={inCrazyGames} showAdvertisementText={false} screenH={height} types={height < 510 ? [[300, 250]] : [[320, 50], [300, 250]]} screenW={width} vertThresh={width < 600 ? 0.28 : 0.5} />
-                    </div>
-                }
-                {inGameDistribution && screen === 'home' && (
-                    <div className="home_ad">
-                        <GameDistributionBanner
-                            id="gd-banner-home"
-                            screenH={height} types={[[300, 250]]} screenW={width} vertThresh={width < 600 ? 0.28 : 0.5} />
-                    </div>
-                )}
                 <span id="g2_playerCount" className={`bigSpan onlineText desktop ${screen !== 'home' ? 'notHome' : ''} ${(screen === 'singleplayer' || screen === 'onboarding' || screen === 'countryGuesser' || screen === 'daily' || (multiplayerState?.inGame && !['waitingForPlayers', 'findingGame', 'findingOpponent'].includes(multiplayerState?.gameData?.state)) || !multiplayerState?.connected || !multiplayerState?.playerCount) ? 'hide' : ''}`}>
                     {maintenance ? text("maintenanceMode") : text("onlineCnt", { cnt: multiplayerState?.playerCount || 0 })}
                 </span>
@@ -3200,13 +3246,38 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
                     )}
                 </div>
 
-                {/* Community Maps icon (moved out of left menu) */}
-                {screen === "home" && onboardingCompleted && !mapModal &&
-                    !process.env.NEXT_PUBLIC_COOLMATH && !process.env.NEXT_PUBLIC_GAMEDISTRIBUTION && (
-                    <DailyCommunityMapsButton
-                        onClick={() => setMapModal(true)}
-                        loggedOut={!session?.token?.secret}
-                    />
+
+                {/* COMO JOGAR panel */}
+                {screen === "home" && onboardingCompleted && (
+                    <div className="ps_how_to_play">
+                        <h2 className="ps_htp_title">Como Jogar</h2>
+                        <div className="ps_htp_steps">
+                            <div className="ps_htp_step">
+                                <div className="ps_htp_icon">📍</div>
+                                <div className="ps_htp_text">
+                                    <strong>1. Explore</strong>
+                                    <p>Observe o ambiente ao seu redor.</p>
+                                </div>
+                            </div>
+                            <div className="ps_htp_step">
+                                <div className="ps_htp_icon">🎯</div>
+                                <div className="ps_htp_text">
+                                    <strong>2. Adivinhe</strong>
+                                    <p>Marque no mapa onde você acha que está.</p>
+                                </div>
+                            </div>
+                            <div className="ps_htp_step">
+                                <div className="ps_htp_icon">🏆</div>
+                                <div className="ps_htp_text">
+                                    <strong>3. Pontue</strong>
+                                    <p>Quanto mais perto, mais pontos!</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="ps_htp_logo">
+                            <img src="/ps-wordmark.png" alt="PlayerSkins" />
+                        </div>
+                    </div>
                 )}
 
                 {/* Daily challenge screen (landing → game → results) */}
@@ -3242,32 +3313,24 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
 
 
                                     {onboardingCompleted && (
-
-                                        <>
-                                            <h1 className={`home__title g2_nav_title wg_font ${navSlideOut ? 'g2_slide_out' : ''}`}>WorldGuessr</h1>
-
-                                            {/* <MaintenanceBanner /> */}
-                                        </>
-
+                                        <div className={`ps_logo_block ${navSlideOut ? 'g2_slide_out' : ''}`}>
+                                            <h1 className="home__title g2_nav_title wg_font ps_logo_title">WorldGuessr</h1>
+                                            <p className="ps_logo_sub">Descubra o lugar. Domine o mundo.</p>
+                                        </div>
                                     )}
 
-
-
                                     {onboardingCompleted && (
-
                                         <>
-
                                             <div className="g2_nav_hr"></div>
                                             <div className="g2_nav_group">
-                                                <button className="g2_nav_text singleplayer"
 
+                                                <button className="g2_nav_text ps_nav_btn ps_nav_active singleplayer"
                                                     onClick={() => {
                                                         if (loading) return;
                                                         setNavSlideOut(true);
                                                         setMiniMapShown(false);
                                                         setTimeout(() => {
                                                             crazyMidgame(() => {
-                                                                // First entry this session: check localStorage preference
                                                                 if (!hasEnteredSingleplayer.current) {
                                                                     hasEnteredSingleplayer.current = true;
                                                                     const pref = gameStorage.getItem("singleplayerDefaultMode");
@@ -3279,85 +3342,128 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
                                                                         return;
                                                                     }
                                                                 }
-                                                                // Subsequent entries: restore last screen used this session
                                                                 setScreen(lastSingleplayerScreen.current || "singleplayer");
                                                             });
-                                                            setNavSlideOut(false); // Reset for next use
+                                                            setNavSlideOut(false);
                                                         }, 300);
                                                     }}>
-                                                    {text("singleplayer")}
+                                                    <span className="ps_nav_icon_wrap">🎮</span>
+                                                    <span className="ps_nav_labels">
+                                                        <span className="ps_nav_title">Jogar</span>
+                                                        <span className="ps_nav_sub">Jogo Solo</span>
+                                                    </span>
                                                 </button>
-                                                {/* <span className="bigSpan">{text("playOnline")}</span> */}
 
-                                                {/* <button className="g2_nav_text" aria-label="Duels" onClick={() => { setShowPartyCards(!showPartyCards) }}>{text("duels")}</button> */}
+                                                <button className="g2_nav_text ps_nav_btn"
+                                                    onClick={() => {
+                                                        if (loading) return;
+                                                        setChatGameModalOpen(true);
+                                                    }}>
+                                                    <span className="ps_nav_icon_wrap">💬</span>
+                                                    <span className="ps_nav_labels">
+                                                        <span className="ps_nav_title">Jogar com o Chat</span>
+                                                        <span className="ps_nav_sub">Chat ao vivo</span>
+                                                    </span>
+                                                </button>
+
                                                 {session?.token?.secret && (
-                                                    <button className="g2_nav_text" aria-label="Duels" onClick={() => { handleMultiplayerAction("publicDuel") }}>{text("rankedDuel")}</button>
+                                                    <button className="g2_nav_text ps_nav_btn" aria-label="Duels" onClick={() => { handleMultiplayerAction("publicDuel") }}>
+                                                        <span className="ps_nav_icon_wrap">⚔️</span>
+                                                        <span className="ps_nav_labels">
+                                                            <span className="ps_nav_title">Duelo Ranqueado</span>
+                                                            <span className="ps_nav_sub">Competição oficial</span>
+                                                        </span>
+                                                    </button>
                                                 )}
-                                                <button className="g2_nav_text" aria-label="Duels" onClick={() => { handleMultiplayerAction("unrankedDuel") }}>{
-                                                    session?.token?.secret ? text("unrankedDuel") : text("findDuel")}</button>
 
-
+                                                <button className="g2_nav_text ps_nav_btn" aria-label="Duels" onClick={() => { handleMultiplayerAction("unrankedDuel") }}>
+                                                    <span className="ps_nav_icon_wrap">🔍</span>
+                                                    <span className="ps_nav_labels">
+                                                        <span className="ps_nav_title">Encontrar Partida</span>
+                                                        <span className="ps_nav_sub">Duelo online</span>
+                                                    </span>
+                                                </button>
 
                                             </div>
                                             <div className="g2_nav_hr"></div>
 
                                             <div className="g2_nav_group">
-                                                {/*<button className="g2_nav_text" aria-label="Party" onClick={() => { setShowPartyCards(!showPartyCards) }}>{text("privateGame")}</button>*/}
-                                                <button className="g2_nav_text" disabled={maintenance} onClick={() => {
+                                                <button className="g2_nav_text ps_nav_btn" disabled={maintenance} onClick={() => {
                                                     if (!ws || !multiplayerState?.connected) {
                                                         setConnectionErrorModalShown(true);
                                                         return;
                                                     }
-
                                                     setNavSlideOut(true);
                                                     setAwaitingCreatePartyScreen(true);
                                                     setTimeout(() => {
                                                         handleMultiplayerAction("createPrivateGame")
                                                     }, 300);
-                                                }}>{text("createGame")}</button>
-                                                <button className="g2_nav_text" disabled={maintenance} onClick={() => {
+                                                }}>
+                                                    <span className="ps_nav_icon_wrap">➕</span>
+                                                    <span className="ps_nav_labels">
+                                                        <span className="ps_nav_title">Criar Sala</span>
+                                                        <span className="ps_nav_sub">Partida privada</span>
+                                                    </span>
+                                                </button>
+
+                                                <button className="g2_nav_text ps_nav_btn" disabled={maintenance} onClick={() => {
                                                     if (!ws || !multiplayerState?.connected) {
                                                         setConnectionErrorModalShown(true);
                                                         return;
                                                     }
                                                     setNavSlideOut(true);
                                                     setTimeout(() => {
-                                                        setNavSlideOut(false); // Reset for next use
+                                                        setNavSlideOut(false);
                                                         handleMultiplayerAction("joinPrivateGame")
-
                                                     }, 300);
-
-                                                }}>{text("joinGame")}</button>
+                                                }}>
+                                                    <span className="ps_nav_icon_wrap">🚪</span>
+                                                    <span className="ps_nav_labels">
+                                                        <span className="ps_nav_title">Entrar em Sala</span>
+                                                        <span className="ps_nav_sub">Com código</span>
+                                                    </span>
+                                                </button>
                                             </div>
 
                                             <div className="g2_nav_hr"></div>
 
                                             <div className="g2_nav_group">
-                                                <DailyMenuItem session={session} onClick={() => enterDailyMode()} />
-
-                                                {/* Twitch Streamer Link */}
-                                                {/* <a
-                                                    href="https://kick.com/ulkuemre"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="g2_nav_text"
-                                                    style={{ color: '#ff4444', textDecoration: 'none' }}
-                                                    aria-label="Watch UlkuEmre Live"
-                                                >
-                                                    🔴 Watch UlkuEmre Live
-                                                </a> */}
+                                                <button className="g2_nav_text ps_nav_btn" onClick={() => enterDailyMode()}>
+                                                    <span className="ps_nav_icon_wrap">🏆</span>
+                                                    <span className="ps_nav_labels">
+                                                        <span className="ps_nav_title">Desafio Diário</span>
+                                                        <span className="ps_nav_sub">Compita e ganhe</span>
+                                                    </span>
+                                                </button>
 
                                                 {inCrazyGames && (
-                                                    <button className="g2_nav_text" aria-label="MapGuessr" onClick={() => {
+                                                    <button className="g2_nav_text ps_nav_btn" aria-label="MapGuessr" onClick={() => {
                                                         setNavSlideOut(true);
                                                         setTimeout(() => {
-                                                            setNavSlideOut(false); // Reset for next use
+                                                            setNavSlideOut(false);
                                                             setMapGuessrModal(true);
                                                         }, 300);
-                                                    }}>MapGuessr</button>
+                                                    }}>
+                                                        <span className="ps_nav_icon_wrap">🗺️</span>
+                                                        <span className="ps_nav_labels">
+                                                            <span className="ps_nav_title">MapGuessr</span>
+                                                            <span className="ps_nav_sub">Modo mapa</span>
+                                                        </span>
+                                                    </button>
                                                 )}
-
                                             </div>
+
+                                            {session?.token?.secret && (
+                                                <div className="ps_player_card">
+                                                    <div className="ps_player_avatar">
+                                                        {(session.token.username || '??').slice(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <div className="ps_player_info">
+                                                        <div className="ps_player_name">{session.token.username || 'Jogador'}</div>
+                                                        <div className="ps_player_badge">Explorador Global</div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </>
                                     )}
 
@@ -3367,33 +3473,6 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
 
                         </div>
 
-                        {/* Footer moved outside of sliding navigation */}
-                        <div className={`home__footer ${(screen === "home" && onboardingCompleted === true && !mapModal && !merchModal && !friendsModal && !accountModalOpen && !mapGuessrModal) ? "visible" : ""}`}>
-                            <div className="footer_btns">
-                                {!isApp && !inCoolMathGames && !inGameDistribution && (
-                                    <>
-                                        <Link target="_blank" href={"https://forum.worldguessr.com/"}><button className="g2_hover_effect home__squarebtn gameBtn g2_container forum" aria-label="Forum"><FaBook className="home__squarebtnicon" /></button></Link>
-                                        <Link target="_blank" href={"https://discord.gg/ADw47GAyS5"}><button className="g2_hover_effect home__squarebtn gameBtn g2_container discord" aria-label="Discord"><FaDiscord className="home__squarebtnicon" /></button></Link>
-
-                                        {!inCrazyGames && (
-                                            <>
-                                                <Link target="_blank" href={"https://www.youtube.com/@worldguessr?sub_confirmation=1"}><button className="g2_hover_effect home__squarebtn gameBtn g2_container youtube" aria-label="Youtube"><FaYoutube className="home__squarebtnicon" /></button></Link>
-                                            </>
-                                        )}
-                                        <Link href={"/leaderboard" + (inCrazyGames ? "?crazygames" : "")}>
-
-                                            <button className="g2_hover_effect home__squarebtn gameBtn g2_container_full " aria-label="Leaderboard"><FaRankingStar className="home__squarebtnicon" /></button></Link>
-                                    </>
-                                )}
-                                {!isApp && inGameDistribution && (
-                                    <Link href={"/leaderboard"}>
-                                        <button className="g2_hover_effect home__squarebtn gameBtn g2_container_full " aria-label="Leaderboard"><FaRankingStar className="home__squarebtnicon" /></button>
-                                    </Link>
-                                )}
-
-                                <button className="g2_hover_effect home__squarebtn gameBtn g2_container_full " aria-label="Settings" onClick={() => setSettingsModal(true)}><FaGear className="home__squarebtnicon" /></button>
-                            </div>
-                        </div>
 
                         <div className="g2_content g2_content_margin g2_slide_in" style={{ display: "flex", gap: "20px", flexDirection: "column" }}>
                             {/*
@@ -3532,6 +3611,51 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
                     type={multiplayerState.connecting ? "warning" : "error"}
                 />}
 
+                <ChatGameModal
+                    isOpen={chatGameModalOpen}
+                    onClose={() => setChatGameModalOpen(false)}
+                    onPlay={() => {
+                        // Activate chat game mode
+                        chatGameActiveRef.current = true;
+                        setChatGuesses([]);
+
+                        // Open SSE connection to receive guesses in real-time
+                        if (chatSseRef.current) chatSseRef.current.close();
+                        const es = new EventSource('http://localhost:3000/api/game-session/stream');
+                        chatSseRef.current = es;
+                        es.onmessage = (ev) => {
+                            try {
+                                const data = JSON.parse(ev.data);
+                                if (data.type === 'init') {
+                                    setChatGuesses((data.guesses || []).filter(g => g.lat != null));
+                                } else if (data.type === 'guess_add' && data.guess?.lat != null) {
+                                    setChatGuesses(prev => {
+                                        if (prev.some(g => g.name === data.guess.name)) return prev;
+                                        return [...prev, data.guess];
+                                    });
+                                } else if (data.type === 'guesses_clear') {
+                                    setChatGuesses([]);
+                                }
+                            } catch { /* ignore */ }
+                        };
+
+                        setNavSlideOut(true);
+                        setMiniMapShown(false);
+                        setTimeout(() => {
+                            crazyMidgame(() => {
+                                if (!hasEnteredSingleplayer.current) {
+                                    hasEnteredSingleplayer.current = true;
+                                    const pref = gameStorage.getItem("singleplayerDefaultMode");
+                                    if (pref === "countryGuesser") { enterCountryGuessrMode("country"); return; }
+                                    if (pref === "continentGuesser") { enterCountryGuessrMode("continent"); return; }
+                                }
+                                setScreen(lastSingleplayerScreen.current || "singleplayer");
+                            });
+                            setNavSlideOut(false);
+                        }, 300);
+                    }}
+                />
+
 
 
 
@@ -3540,7 +3664,7 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
                         inCoolMathGames={inCoolMathGames}
                         inGameDistribution={inGameDistribution}
                         miniMapShown={miniMapShown} setMiniMapShown={setMiniMapShown}
-singlePlayerRound={singlePlayerRound} setSinglePlayerRound={setSinglePlayerRound} showDiscordModal={showDiscordModal} setShowDiscordModal={setShowDiscordModal} inCrazyGames={inCrazyGames} showPanoOnResult={showPanoOnResult} setShowPanoOnResult={setShowPanoOnResult} options={options} countryStreak={countryStreak} setCountryStreak={setCountryStreak} hintShown={hintShown} setHintShown={setHintShown} pinPoint={pinPoint} setPinPoint={setPinPoint} showAnswer={showAnswer} setShowAnswer={setShowAnswer} loading={loading} setLoading={setLoading} session={session} gameOptionsModalShown={gameOptionsModalShown} setGameOptionsModalShown={setGameOptionsModalShown} mapModal={mapModal} latLong={latLong} loadLocation={loadLocation} gameOptions={gameOptions} setGameOptions={setGameOptions} />
+singlePlayerRound={singlePlayerRound} setSinglePlayerRound={setSinglePlayerRound} showDiscordModal={showDiscordModal} setShowDiscordModal={setShowDiscordModal} inCrazyGames={inCrazyGames} showPanoOnResult={showPanoOnResult} setShowPanoOnResult={setShowPanoOnResult} options={options} countryStreak={countryStreak} setCountryStreak={setCountryStreak} hintShown={hintShown} setHintShown={setHintShown} pinPoint={pinPoint} setPinPoint={setPinPoint} showAnswer={showAnswer} setShowAnswer={setShowAnswer} loading={loading} setLoading={setLoading} session={session} gameOptionsModalShown={gameOptionsModalShown} setGameOptionsModalShown={setGameOptionsModalShown} mapModal={mapModal} latLong={latLong} loadLocation={loadLocation} gameOptions={gameOptions} setGameOptions={setGameOptions} chatGuesses={chatGuesses} chatGameRoundResults={chatGameRoundResults} chatGameScores={chatGameScores} />
                 </div>}
 
                 {screen === "countryGuesser" && <div className="home__singleplayer">

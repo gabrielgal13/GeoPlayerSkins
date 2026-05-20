@@ -4,10 +4,10 @@ export default function Document() {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
   return (
-    <Html lang="en" translate="no" className="notranslate" style={{ backgroundColor: '#000000' }}>
+    <Html lang="en" translate="no" className="notranslate" style={{ backgroundColor: '#020510' }}>
       <Head>
         <meta name="google" content="notranslate" />
-        <link rel="preload" href={`${basePath}/street2.webp`} as="image" type="image/webp" fetchpriority="high" />
+        <link rel="preload" href={`${basePath}/bg-map.png`} as="image" type="image/png" fetchpriority="high" />
         {/* Font preconnects and stylesheets */}
         <link rel="preconnect" href="https://fonts.googleapis.com"/>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
@@ -33,26 +33,14 @@ export default function Document() {
         <style dangerouslySetInnerHTML={{
           __html: `
             html, body {
-              background-color: #000000 !important;
+              background-color: #020510 !important;
               margin: 0;
               padding: 0;
-            }
-            body::before {
-              content: '';
-              position: fixed;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              background: url("${basePath}/street2.webp") center/cover no-repeat;
-              opacity: 0.5;
-              z-index: 0;
-              pointer-events: none;
             }
           `
         }} />
       </Head>
-      <body className="mainBody notranslate" translate="no" style={{ backgroundColor: '#000000' }}>
+      <body className="mainBody notranslate" translate="no" style={{ backgroundColor: '#020510' }}>
         {process.env.NEXT_PUBLIC_COOLMATH === "true" && (
           <>
             <div id="cmg-splash" style={{

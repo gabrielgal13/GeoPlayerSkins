@@ -792,6 +792,54 @@ const MultiplayerLayer = memo(function MultiplayerLayer({
   });
 });
 
+// Deterministic color per participant based on name
+const CHAT_COLORS = ['#FF6B6B','#FF9F43','#FFD166','#00FFA3','#00E5FF','#A855F7','#FF6EFB','#1F8CFF'];
+function chatColor(name) {
+  let h = 0;
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return CHAT_COLORS[h % CHAT_COLORS.length];
+}
+
+function makeChatGuessIcon(name, color) {
+  const initials = name.slice(0, 2).toUpperCase();
+  const html = `<div style="
+    width:32px;height:32px;border-radius:50%;
+    background:${color};border:2px solid #fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;color:#000;
+    box-shadow:0 2px 6px rgba(0,0,0,0.5);
+    font-family:sans-serif;
+  ">${initials}</div>`;
+  return L.divIcon({ html, className: '', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32] });
+}
+
+const ChatGuessLayer = memo(function ChatGuessLayer({ guesses, answerLocation, polylineRenderer }) {
+  if (!guesses || guesses.length === 0) return null;
+  return guesses.map((g) => {
+    if (g.lat == null || g.lng == null) return null;
+    const color = chatColor(g.name);
+    const icon = makeChatGuessIcon(g.name, color);
+    const linePositions = (answerLocation?.lat != null && answerLocation?.long != null)
+      ? [[g.lat, g.lng], [answerLocation.lat, answerLocation.long]]
+      : null;
+    return (
+      <React.Fragment key={g.name}>
+        <Marker position={[g.lat, g.lng]} icon={icon}>
+          <Tooltip permanent={false} direction="top">
+            <span style={{ fontWeight: 700, color }}>{g.name}</span>
+            <span style={{ color: '#ccc', marginLeft: 4, fontSize: 11 }}>
+              &ldquo;{g.text}&rdquo;
+            </span>
+          </Tooltip>
+        </Marker>
+        {linePositions && (
+          <Polyline positions={linePositions} color={color} renderer={polylineRenderer} />
+        )}
+      </React.Fragment>
+    );
+  });
+});
+
 /**
  * Hint circle — geospatial radius preserves on-screen size at world view
  * while staying anchored during pan/zoom (matches legacy CircleMarker behavior).
@@ -862,6 +910,7 @@ const MapComponent = ({
   stopCameraAnimations,
   resetKey,
   cameraCancelKey,
+  chatGuesses,
 }) => {
   const { t: text } = useTranslation("common");
   // Single source of truth for "the reveal animation owns invalidateSize".
@@ -1009,6 +1058,8 @@ const MapComponent = ({
           isCoolMath={isCoolMath}
         />
       )}
+
+      <ChatGuessLayer guesses={chatGuesses} answerLocation={answerShown ? answerLocation : null} polylineRenderer={canvasRenderer} />
 
       {showHint && location && (
         <HintCircle location={location} gameOptions={gameOptions} round={round} />
