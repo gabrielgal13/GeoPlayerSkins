@@ -29,9 +29,6 @@ const nextConfig = {
         NEXT_PUBLIC_COMMIT_HASH: getCommitHash(),
         NEXT_PUBLIC_BUILD_TIME: getBuildTime(),
     },
-    webpack: (config, { webpack }) => {
-        return config
-    },
     sassOptions: {
         includePaths: [path.join(__dirname, 'styles')],
     },

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-const RAFFLE_API = 'http://localhost:3000';
+const RAFFLE_API = process.env.NEXT_PUBLIC_RAFFLE_API || 'http://localhost:3000';
 
 const SOURCE_BADGE = {
   twitch: { label: 'TWITCH', color: '#9147FF', bg: 'rgba(145,71,255,0.15)' },
@@ -40,7 +40,7 @@ export default function ChatGameModal({ isOpen, onClose, onPlay }) {
 
     es.onerror = () => {
       setConnected(false);
-      setError('Não foi possível conectar ao raffle-app (localhost:3000). Verifique se ele está rodando.');
+      setError(`Não foi possível conectar ao raffle-app (${RAFFLE_API}). Verifique se ele está rodando.`);
     };
 
     return () => {

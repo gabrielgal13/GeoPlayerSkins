@@ -1109,6 +1109,49 @@ html {
     transform: scale(1.05);
 }
 
+.g2_dark_game_btn {
+    background: rgba(10, 14, 26, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    &:hover {
+        background: rgba(25, 35, 60, 0.92);
+    }
+}
+
+.g2_dark_icon_btn_round {
+    background: rgba(10, 14, 26, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 50% !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    &:hover {
+        background: rgba(25, 35, 60, 0.92);
+    }
+}
+
+/* Fix for game options button overflow in navbar */
+.gameBtn.navBtn.g2_dark_game_btn.g2_lexend {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+    display: flex;
+    align-items: center;
+}
+
 /* Fix for game options button overflow in navbar */
 .gameBtn.navBtn.g2_green_button.g2_lexend {
     white-space: nowrap;
@@ -1367,12 +1410,11 @@ h1, h2, h3, span, label {
     top: 50px;
     right: 0;
     font-size: clamp(1.1rem, 2vw, 1.5rem);
-    background: var(--gradLight);
-    background-color: var(--primaryTransparent);
+    background: rgba(10, 14, 26, 0.85);
     backdrop-filter: blur(12px) saturate(180%);
     -webkit-backdrop-filter: blur(12px) saturate(180%);
     padding: 12px 20px;
-    border: 2px solid var(--primary);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 16px;
     color: white;
     user-select: none;
@@ -1381,10 +1423,9 @@ h1, h2, h3, span, label {
     opacity: 0;
     transform: translateY(-20px) scale(0.95);
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.35),
-        0 4px 12px rgba(36, 87, 52, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        0 8px 32px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
     margin-right: 10px;
     letter-spacing: 0.025em;
     font-variant-numeric: tabular-nums;
@@ -1412,13 +1453,15 @@ h1, h2, h3, span, label {
 }
 
 .timer__round-label {
-    font-size: 0.7em;
-    opacity: 0.75;
+    font-size: 0.72em;
+    opacity: 1;
+    color: #4fc3f7;
     letter-spacing: 0.05em;
 }
 
 .timer__main-row {
-    font-size: 1.1em;
+    font-size: 1.3em;
+    font-weight: 700;
 }
 
 .timer__countdown {
@@ -7328,8 +7371,7 @@ div:hover .elo-badge {
 
     img {
         height: 18px;
-        opacity: 0.6;
-        filter: brightness(0) invert(1);
+        opacity: 0.9;
     }
 }
 

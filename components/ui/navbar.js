@@ -1,4 +1,4 @@
-import { FaArrowLeft, FaUser, FaUserFriends } from "react-icons/fa";
+import { FaArrowLeft, FaUser, FaUserFriends, FaGlobe } from "react-icons/fa";
 import nameFromCode from "../utils/nameFromCode";
 import AccountBtn from "./accountBtn";
 import { FaPencil } from "react-icons/fa6";
@@ -27,13 +27,13 @@ export default function Navbar({ maintenance, joinCodePress, inCrazyGames, inCoo
                     {!mapModalOpen && <h1 className="navbar__title desktop" onClick={onNavbarPress}>WorldGuessr</h1>}
                     {!mapModalOpen && <h1 className="navbar__title mobile" onClick={onNavbarPress}>WG</h1>}
                     {!gameOptionsModalShown && !accountModalOpen && !selectCountryModalShown && !partyModalShown && !(screen === 'daily' && (dailyPhase === 'game' || dailyPhase === 'submitting')) &&  <>
-                        <button className={`gameBtn navBtn backBtn ${screen === 'onboarding' ? 'g2_blue_button' : 'g2_red_button'} desktop`} onClick={backBtnPressed}>{screen === 'onboarding' ? text("menu") : text("back")}</button>
-                        <button className={`gameBtn navBtn backBtn ${screen === 'onboarding' ? 'g2_blue_button' : 'g2_red_button'} mobile`} onClick={backBtnPressed}><FaArrowLeft /></button>
+                        <button className={`gameBtn navBtn backBtn ${screen === 'onboarding' ? 'g2_blue_button' : 'g2_dark_game_btn'} desktop`} onClick={backBtnPressed}>{screen === 'onboarding' ? text("menu") : <><FaArrowLeft size={12} style={{marginRight: 6}} />Sair do jogo</>}</button>
+                        <button className={`gameBtn navBtn backBtn ${screen === 'onboarding' ? 'g2_blue_button' : 'g2_dark_icon_btn_round'} mobile`} onClick={backBtnPressed}><FaArrowLeft /></button>
                     </>
                     }
                 </div>
                 {reloadBtn && !accountModalOpen && !gameOptionsModalShown && (
-                    <button className="gameBtn navBtn backBtn reloadBtn g2_blue_button" onClick={reloadBtnPressed}>
+                    <button className="gameBtn navBtn backBtn reloadBtn g2_dark_icon_btn_round" onClick={reloadBtnPressed}>
                         {/* use svg /arrow-turn-down-left-svgrepo-com.svg white color */}
                         <img src={asset("/return.png")} alt="reload"  height={13} style={{ filter: 'invert(1)', transform: 'scale(1.5)' }} />
                     </button>
@@ -58,7 +58,8 @@ export default function Navbar({ maintenance, joinCodePress, inCrazyGames, inCoo
                 <div className="navbar__right">
 
                     {(screen === 'singleplayer' || screen === 'countryGuesser') && !accountModalOpen && (
-                        <button className="gameBtn navBtn g2_green_button g2_lexend" disabled={loading} onClick={() => setGameOptionsModalShown(true)}>
+                        <button className="gameBtn navBtn g2_dark_game_btn g2_lexend" disabled={loading} onClick={() => setGameOptionsModalShown(true)}>
+                            <FaGlobe size={15} style={{marginRight: 6}} />
                             {screen === 'countryGuesser'
                                 ? (countryGuessrMode?.subMode === "continent" ? text("continentGuesser") : text("countryGuesser"))
                                 : <>
@@ -70,10 +71,8 @@ export default function Navbar({ maintenance, joinCodePress, inCrazyGames, inCoo
                                                 ''}
                                 </>
                             }
-
                             &nbsp;
-
-                            <FaPencil size={20} />
+                            <FaPencil size={16} />
                         </button>
                     )}
 

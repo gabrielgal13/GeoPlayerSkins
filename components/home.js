@@ -1434,7 +1434,7 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
         if (!chatGameActiveRef.current) return;
         if (!latLong?.lat) return; // ignore null/reset during location transitions
         setChatGameRoundResults([]); // clear previous round's leaderboard
-        fetch('http://localhost:3000/api/game-session/round', {
+        fetch(`${process.env.NEXT_PUBLIC_RAFFLE_API || 'http://localhost:3000'}/api/game-session/round`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ active: true }),
@@ -1445,7 +1445,7 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
     // Chat game: end round + compute scores when streamer reveals the answer
     useEffect(() => {
         if (!chatGameActiveRef.current || !showAnswer) return;
-        fetch('http://localhost:3000/api/game-session/round', {
+        fetch(`${process.env.NEXT_PUBLIC_RAFFLE_API || 'http://localhost:3000'}/api/game-session/round`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ active: false }),
@@ -3082,7 +3082,7 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
 
                 {/* Loading overlay - covers iframe with background image to prevent white flicker */}
                 <div className={`loading-overlay ${(loading || mapSwitchMaskShown) ? 'loading-overlay--visible' : ''}`}>
-                    <NextImage.default src={asset('/street2.webp')}
+                    <NextImage.default src={asset('/bgmap2.png')}
                         draggable={false}
                         width={1920}
                         height={1080}
@@ -3095,23 +3095,23 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
                             left: 0,
                             width: "100%",
                             height: "100%",
-                            opacity: 0.5,
+                            opacity: 1,
                         }}
                         sizes="100vw"
                     />
-                    {/* Dark background behind the semi-transparent image to match home screen look */}
+                    {/* Dark background behind the image to match home screen look */}
                     <div style={{
                         position: "absolute",
                         top: 0,
                         left: 0,
                         width: "100%",
                         height: "100%",
-                        backgroundColor: "#000",
+                        backgroundColor: "#020510",
                         zIndex: -1,
                     }} />
                 </div>
 
-                <BannerText text={`${text("loading")}...`} shown={loading} showCompass={true} />
+                <BannerText text="Carregando..." shown={loading} showCompass={true} />
 
 
 
@@ -3275,7 +3275,7 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
                             </div>
                         </div>
                         <div className="ps_htp_logo">
-                            <img src="/ps-wordmark.png" alt="PlayerSkins" />
+                            <img src="/wordmark.png" alt="PlayerSkins" />
                         </div>
                     </div>
                 )}
@@ -3621,7 +3621,7 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
 
                         // Open SSE connection to receive guesses in real-time
                         if (chatSseRef.current) chatSseRef.current.close();
-                        const es = new EventSource('http://localhost:3000/api/game-session/stream');
+                        const es = new EventSource(`${process.env.NEXT_PUBLIC_RAFFLE_API || 'http://localhost:3000'}/api/game-session/stream`);
                         chatSseRef.current = es;
                         es.onmessage = (ev) => {
                             try {

@@ -8,6 +8,7 @@ export default function Document() {
       <Head>
         <meta name="google" content="notranslate" />
         <link rel="preload" href={`${basePath}/bg-map.png`} as="image" type="image/png" fetchpriority="high" />
+        <link rel="preload" href={`${basePath}/bgmap2.png`} as="image" type="image/png" fetchpriority="high" />
         {/* Font preconnects and stylesheets */}
         <link rel="preconnect" href="https://fonts.googleapis.com"/>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>

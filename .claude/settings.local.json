@@ -23,7 +23,16 @@
       "Bash(npx acorn:*)",
       "WebSearch",
       "Bash(npx next:*)",
-      "WebFetch(domain:restcountries.com)"
+      "WebFetch(domain:restcountries.com)",
+      "Bash(rtk npx *)",
+      "Bash(rtk read *)",
+      "PowerShell(\\(Get-Command npx\\).Source)",
+      "Read(//tmp/**)",
+      "PowerShell(cd \"c:\\\\Users\\\\DDK\\\\Downloads\\\\SorteioPlayerSKIN\\\\worldguessr\"; $job = Start-Job -ScriptBlock { cd \"c:\\\\Users\\\\DDK\\\\Downloads\\\\SorteioPlayerSKIN\\\\worldguessr\"; & \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \"C:\\\\Program Files\\\\nodejs\\\\node_modules\\\\npm\\\\bin\\\\npx-cli.js\" next dev -p 3002 --webpack 2>&1 | Out-File -FilePath \"$env:TEMP\\\\next-dev.log\" -Encoding utf8 }; Start-Sleep 20; Get-Content \"$env:TEMP\\\\next-dev.log\" -ErrorAction SilentlyContinue | Select-Object -First 30)",
+      "Bash(rtk curl *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('guess:', d.get\\('guess','NOT FOUND'\\)\\); print\\('hint:', d.get\\('hint','NOT FOUND'\\)\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,':', v\\) for k,v in d.items\\(\\) if 'guess' in k.lower\\(\\) or 'hint' in k.lower\\(\\) or 'dica' in v.lower\\(\\) if isinstance\\(v,str\\)]\")",
+      "Bash(Select-String \"bg\")"
     ],
     "deny": [
       "Bash(git push:*)"
