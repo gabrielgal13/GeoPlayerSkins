@@ -35,7 +35,6 @@ const nextConfig = {
     images: {
         unoptimized: true,
     },
-    output: 'export',
     async rewrites() {
         return [
             {
