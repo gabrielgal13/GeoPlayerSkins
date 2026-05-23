@@ -32,7 +32,8 @@
       "Bash(rtk curl *)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('guess:', d.get\\('guess','NOT FOUND'\\)\\); print\\('hint:', d.get\\('hint','NOT FOUND'\\)\\)\")",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,':', v\\) for k,v in d.items\\(\\) if 'guess' in k.lower\\(\\) or 'hint' in k.lower\\(\\) or 'dica' in v.lower\\(\\) if isinstance\\(v,str\\)]\")",
-      "Bash(Select-String \"bg\")"
+      "Bash(Select-String \"bg\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.get\\('dependencies',{}\\).items\\(\\)\\)[:5]\\)\")"
     ],
     "deny": [
       "Bash(git push:*)"

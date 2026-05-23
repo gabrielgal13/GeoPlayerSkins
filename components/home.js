@@ -37,7 +37,7 @@ const AccountModal = dynamic(() => import('@/components/accountModal'), { ssr: f
 const MapGuessrModal = dynamic(() => import('@/components/mapGuessrModal'), { ssr: false });
 import MultiplayerHome from "@/components/multiplayerHome";
 import SetUsernameModal from "@/components/setUsernameModal";
-import ChatBox from "@/components/chatBox";
+const ChatBox = dynamic(() => import("@/components/chatBox"), { ssr: false });
 import SettingsModal from "@/components/settingsModal";
 import WelcomeOverlay from "@/components/welcomeOverlay";
 import OnboardingComplete from "@/components/onboardingComplete";
