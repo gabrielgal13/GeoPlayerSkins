@@ -1348,7 +1348,7 @@
 }
 
 /* Upload Success State */
-.make-map-form > div:has(button:contains("Clear Upload")) {
+.make-map-form > div:has(.upload-clear-btn) {
   padding: 20px;
   background: rgba(40, 167, 69, 0.15);
   border: 1px solid rgba(40, 167, 69, 0.3);

@@ -217,7 +217,7 @@ export default function MakeMapForm({ map, setMap, createMap }) {
           )}
           {
             uploaded && (
-              <button type="button" className="add-button" onClick={() => {
+              <button type="button" className="add-button upload-clear-btn" onClick={() => {
                 setFormData({ ...formData, data: [] });
               setUploaded(false)
               }}>
