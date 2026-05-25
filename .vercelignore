@@ -1,0 +1,9 @@
+# Express API handlers — Vercel auto-detects api/ as Serverless Functions,
+# but these files are served by the custom Express server (server.js), not Vercel.
+api/
+
+# Custom servers — not used on Vercel (serverless platform)
+server.js
+authServer.js
+cron.js
+ws/
