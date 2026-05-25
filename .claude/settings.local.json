@@ -34,7 +34,10 @@
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,':', v\\) for k,v in d.items\\(\\) if 'guess' in k.lower\\(\\) or 'hint' in k.lower\\(\\) or 'dica' in v.lower\\(\\) if isinstance\\(v,str\\)]\")",
       "Bash(Select-String \"bg\")",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.get\\('dependencies',{}\\).items\\(\\)\\)[:5]\\)\")",
-      "PowerShell(Get-ChildItem -Recurse -Filter \"route.ts\" \"c:\\\\Users\\\\DDK\\\\Downloads\\\\SorteioPlayerSKIN\\\\raffle-app\\\\src\\\\app\\\\api\" | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"c:\\\\Users\\\\DDK\\\\Downloads\\\\SorteioPlayerSKIN\\\\raffle-app\\\\src\\\\app\\\\api\\\\\", \"\"\\) })"
+      "PowerShell(Get-ChildItem -Recurse -Filter \"route.ts\" \"c:\\\\Users\\\\DDK\\\\Downloads\\\\SorteioPlayerSKIN\\\\raffle-app\\\\src\\\\app\\\\api\" | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"c:\\\\Users\\\\DDK\\\\Downloads\\\\SorteioPlayerSKIN\\\\raffle-app\\\\src\\\\app\\\\api\\\\\", \"\"\\) })",
+      "Bash(Get-ChildItem -Recurse \"c:\\\\Users\\\\DDK\\\\Downloads\\\\SorteioPlayerSKIN\\\\worldguessr\\\\api\" -File)",
+      "Bash(Measure-Object)",
+      "Bash(Select-Object -ExpandProperty Count)"
     ],
     "deny": [
       "Bash(git push:*)"
