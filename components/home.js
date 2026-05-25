@@ -3082,7 +3082,7 @@ export default function Home({ initialScreen, dailyBootstrap } = {}) {
 
                 {/* Loading overlay - covers iframe with background image to prevent white flicker */}
                 <div className={`loading-overlay ${(loading || mapSwitchMaskShown) ? 'loading-overlay--visible' : ''}`}>
-                    <NextImage.default src={asset('/bgmap2.png')}
+                    <NextImage src={asset('/bgmap2.png')}
                         draggable={false}
                         width={1920}
                         height={1080}

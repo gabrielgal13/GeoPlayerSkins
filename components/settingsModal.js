@@ -110,7 +110,7 @@ export default function SettingsModal({ shown, onClose, options, setOptions, inC
                     </a>
                     <a href="https://www.coolmathgames.com/0-worldguessr" target="_blank" rel="noreferrer">
                         <button className="g2_hover_effect home__squarebtn gameBtn g2_container_full" aria-label="CoolmathGames" style={{ width: '50px', height: '50px', padding: '0', position: 'relative', overflow: 'hidden' }}>
-                            <NextImage.default src={asset('/cmlogo.png')} draggable={false} fill alt="Coolmath Games Logo" style={{ objectFit: 'contain', padding: '4px' }} />
+                            <NextImage src={asset('/cmlogo.png')} draggable={false} fill alt="Coolmath Games Logo" style={{ objectFit: 'contain', padding: '4px' }} />
                         </button>
                     </a>
                     <a href="https://worldguessr.com/privacy.html" target="_blank" rel="noreferrer">
